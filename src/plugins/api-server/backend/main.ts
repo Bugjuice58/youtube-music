@@ -2,6 +2,7 @@ import { jwt } from 'hono/jwt';
 import { OpenAPIHono as Hono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import { serve } from '@hono/node-server';
+import { cors } from 'hono/cors';
 
 import registerCallback from '@/providers/song-info';
 import { createBackend } from '@/utils';
@@ -43,6 +44,15 @@ export const backend = createBackend<BackendType, APIServerConfig>({
     this.app = new Hono();
 
     // middlewares
+
+    // disable cors checks as we use jwt (prob not the best idea but...)
+
+    this.app.use('*', cors({
+      origin: '*',  // Allow all origins
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Allow these methods
+      allowHeaders: ['Content-Type', 'Authorization'],  // Allow these headers
+    }));
+
     this.app.use(
       '/api/*',
       jwt({
