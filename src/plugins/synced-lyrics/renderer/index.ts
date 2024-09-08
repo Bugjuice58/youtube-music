@@ -14,8 +14,6 @@ import type { SyncedLyricsPluginConfig } from '../types';
 
 export let _ytAPI: YoutubePlayer | null = null;
 
-let timeOffset = 0;
-
 export const renderer = createRenderer<{
   observerCallback: MutationCallback;
   observer?: MutationObserver;
@@ -57,11 +55,6 @@ export const renderer = createRenderer<{
         () => setCurrentTime((_ytAPI?.getCurrentTime() ?? 0) * 1000),
         100,
       );
-    if (!this.hasAddedEvents) {
-      const video = document.querySelector('video');
-      video?.addEventListener('timeupdate', this.progressCallback);
-
-      if (video) this.hasAddedEvents = true;
     }
 
     this.observer ??= new MutationObserver(
@@ -80,8 +73,6 @@ export const renderer = createRenderer<{
     setConfig(await ctx.getConfig());
 
     ctx.ipc.on('ytmd:update-song-info', async (info: SongInfo) => {
-      const video = document.querySelector('video');
-      timeOffset = video!.currentTime;
       await makeLyricsRequest(info);
     });
   },
