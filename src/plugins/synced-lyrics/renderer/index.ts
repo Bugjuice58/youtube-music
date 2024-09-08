@@ -18,10 +18,9 @@ let timeOffset = 0;
 
 export const renderer = createRenderer<{
   observerCallback: MutationCallback;
-  hasAddedEvents: boolean;
   observer?: MutationObserver;
   videoDataChange: () => Promise<void>;
-  progressCallback: (evt: Event) => void;
+  updateTimestampInterval?: NodeJS.Timeout | string | number;
 }, SyncedLyricsPluginConfig>({
   onConfigChange(newConfig) {
     setConfig(newConfig);
@@ -52,9 +51,12 @@ export const renderer = createRenderer<{
     await this.videoDataChange();
   },
 
-  hasAddedEvents: false,
-
   async videoDataChange() {
+    if (!this.updateTimestampInterval) {
+      this.updateTimestampInterval = setInterval(
+        () => setCurrentTime((_ytAPI?.getCurrentTime() ?? 0) * 1000),
+        100,
+      );
     if (!this.hasAddedEvents) {
       const video = document.querySelector('video');
       video?.addEventListener('timeupdate', this.progressCallback);
@@ -72,16 +74,6 @@ export const renderer = createRenderer<{
     const header = await waitForElement<HTMLElement>(selectors.head);
     this.observer.observe(header, { attributes: true });
     header.removeAttribute('disabled');
-  },
-
-  progressCallback(evt: Event) {
-    switch (evt.type) {
-      case 'timeupdate': {
-        const video = evt.target as HTMLVideoElement; // Internally, youtube stiches videos/songs together as one video stream, leading the start of one song (when playing after another song) to have a much bigger current time than 0
-        setCurrentTime((video.currentTime - timeOffset) * 1000);
-        break;
-      }
-    }
   },
 
   async start(ctx: RendererContext<SyncedLyricsPluginConfig>) {
